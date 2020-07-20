@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<QCARConfig xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="qcar_config.xsd">
+  <Tracking>
+    <ImageTarget name="cilindrosMasDetalle" size="10.800000 6.392157" />
+    <ImageTarget name="cilindros" size="10.800000 6.392157" />
+  </Tracking>
+</QCARConfig>
