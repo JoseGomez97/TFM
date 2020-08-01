@@ -5,23 +5,46 @@ using RosSharp;
 using RosSharp.RosBridgeClient;
 using UnityEngine.UI;
 using System;
+using System.Globalization;
 
 public class CanvasManager : MonoBehaviour
 {
     public bool showDebug = false;
+
     public TextMeshProUGUI debugTextUI;
+
     public ObjectTargetBehaviour cylinder;
+    public ImageTargetBehaviour cilindros;
+    public ImageTargetBehaviour cajas;
+    public ImageTargetBehaviour esferas;
+
     public CanvasGroup debugInfoCanvasGroup;
     public CanvasGroup mainUiCanvasGroup;
     public CanvasGroup settingsMenuCanvasGroup;
     public CanvasGroup exitMenuCanvasGroup;
+    public CanvasGroup markersMenuCanvasGroup;
+
     public RosConnector rosConnector;
+
     public InputField serverIP;
     public InputField serverPort;
-    public Text warningSettingsText;
-    public Button applySettingsButton;
 
-    public string current = "main"; // Can be "main", "settings" or "exit"
+    public InputField cilindrosPosX;
+    public InputField cilindrosPosY;
+    public InputField cilindrosPosZ;
+    public InputField cajasPosX;
+    public InputField cajasPosY;
+    public InputField cajasPosZ;
+    public InputField esferasPosX;
+    public InputField esferasPosY;
+    public InputField esferasPosZ;
+
+    public Text warningSettingsText;
+
+    public Button applySettingsButton;
+    public Button applyMarkersButton;
+
+    public string current = "main"; // Can be "main", "settings", "markers" or "exit"
 
     // Start is called before the first frame update
     void Start()
@@ -30,6 +53,7 @@ public class CanvasManager : MonoBehaviour
         DisableExitMenu();
         DisableSettingsMenu();
         DisableDebugInfo();
+        DisableMarkersMenu();
 
         Application.targetFrameRate = 60;
     }
@@ -52,6 +76,10 @@ public class CanvasManager : MonoBehaviour
             {
                 DisableExitMenu();
             }
+            else if (current == "markers")
+            {
+                DisableMarkersMenu();
+            }
         }
 
         if (showDebug == true)
@@ -68,7 +96,17 @@ public class CanvasManager : MonoBehaviour
             {
                 applySettingsButton.interactable = false;
             }
-
+        }
+        else if (current == "markers")
+        {
+            if (CheckMarkersFormat())
+            {
+                applyMarkersButton.interactable = true;
+            }
+            else
+            {
+                applyMarkersButton.interactable = false;
+            }
         }
 
     }
@@ -117,6 +155,32 @@ public class CanvasManager : MonoBehaviour
         return isCorrect;
     }
 
+    public bool CheckMarkersFormat()
+    {
+        if (IsFloat(cilindrosPosX.text) &&
+            IsFloat(cilindrosPosY.text) &&
+            IsFloat(cilindrosPosZ.text) &&
+            IsFloat(cajasPosX.text) &&
+            IsFloat(cajasPosY.text) &&
+            IsFloat(cajasPosZ.text) &&
+            IsFloat(esferasPosX.text) &&
+            IsFloat(esferasPosY.text) &&
+            IsFloat(esferasPosZ.text))
+        {
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
+
+    public static bool IsFloat(string str)
+    {
+        return (float.TryParse(str.Replace(",", "."), NumberStyles.Float,
+                new CultureInfo("en-US").NumberFormat, out _));
+    }
+
     public void OnApplySettings()
     {
         rosConnector.RosSocket.Close();
@@ -124,6 +188,24 @@ public class CanvasManager : MonoBehaviour
         rosConnector.Awake();
 
         DisableSettingsMenu();
+    }
+
+    public void OnApplyMarkers()
+    {
+        cilindros.gameObject.transform.position =
+            new Vector3(float.Parse(cilindrosPosX.text.Replace(",", "."), new CultureInfo("en-US").NumberFormat),
+                        float.Parse(cilindrosPosY.text.Replace(",", "."), new CultureInfo("en-US").NumberFormat),
+                        float.Parse(cilindrosPosZ.text.Replace(",", "."), new CultureInfo("en-US").NumberFormat));
+        cajas.gameObject.transform.position =
+            new Vector3(float.Parse(cajasPosX.text.Replace(",", "."), new CultureInfo("en-US").NumberFormat),
+                        float.Parse(cajasPosY.text.Replace(",", "."), new CultureInfo("en-US").NumberFormat),
+                        float.Parse(cajasPosZ.text.Replace(",", "."), new CultureInfo("en-US").NumberFormat));
+        esferas.gameObject.transform.position =
+            new Vector3(float.Parse(esferasPosX.text.Replace(",", "."), new CultureInfo("en-US").NumberFormat),
+                        float.Parse(esferasPosY.text.Replace(",", "."), new CultureInfo("en-US").NumberFormat),
+                        float.Parse(esferasPosZ.text.Replace(",", "."), new CultureInfo("en-US").NumberFormat));
+
+        DisableMarkersMenu();
     }
 
     public void OnEnableDebug()
@@ -139,7 +221,6 @@ public class CanvasManager : MonoBehaviour
             EnableDebugInfo();
         }
     }
-
     public void OnEnableSettings()
     {
         if (current == "settings")
@@ -152,6 +233,18 @@ public class CanvasManager : MonoBehaviour
             EnableSettingsMenu();
         }
     }
+    public void OnEnableMarkers()
+    {
+        if (current == "markers")
+        {
+            DisableMarkersMenu();
+        }
+        else
+        {
+            current = "markers";
+            EnableMarkersMenu();
+        }
+    }
 
     public void EnableMainUI()
     {
@@ -161,7 +254,6 @@ public class CanvasManager : MonoBehaviour
         mainUiCanvasGroup.blocksRaycasts = true;
         current = "main";
     }
-
     public void DisableMainUI()
     {
         // Reduce the visibility of the main UI, and disable all interraction
@@ -169,13 +261,13 @@ public class CanvasManager : MonoBehaviour
         mainUiCanvasGroup.interactable = false;
         mainUiCanvasGroup.blocksRaycasts = false;
     }
+
     public void EnableDebugInfo()
     {
         debugInfoCanvasGroup.alpha = 1;
         debugInfoCanvasGroup.interactable = true;
         debugInfoCanvasGroup.blocksRaycasts = true;
     }
-
     public void DisableDebugInfo()
     {
         debugInfoCanvasGroup.alpha = 0;
@@ -204,6 +296,36 @@ public class CanvasManager : MonoBehaviour
         settingsMenuCanvasGroup.alpha = 0;
         settingsMenuCanvasGroup.interactable = false;
         settingsMenuCanvasGroup.blocksRaycasts = false;
+        EnableMainUI();
+    }
+
+    public void EnableMarkersMenu()
+    {
+        Debug.Log("Opening markers menu...");
+        // Fill all layouts with actual data
+        cilindrosPosX.text = cilindros.gameObject.transform.position.x.ToString();
+        cilindrosPosY.text = cilindros.gameObject.transform.position.y.ToString();
+        cilindrosPosZ.text = cilindros.gameObject.transform.position.z.ToString();
+        cajasPosX.text = cajas.gameObject.transform.position.x.ToString();
+        cajasPosY.text = cajas.gameObject.transform.position.y.ToString();
+        cajasPosZ.text = cajas.gameObject.transform.position.z.ToString();
+        esferasPosX.text = esferas.gameObject.transform.position.x.ToString();
+        esferasPosY.text = esferas.gameObject.transform.position.y.ToString();
+        esferasPosZ.text = esferas.gameObject.transform.position.z.ToString();
+        // Enable interraction with confirmation gui and make it visible
+        markersMenuCanvasGroup.alpha = 1;
+        markersMenuCanvasGroup.interactable = true;
+        markersMenuCanvasGroup.blocksRaycasts = true;
+        DisableMainUI();
+        current = "markers";
+    }
+    public void DisableMarkersMenu()
+    {
+        Debug.Log("Going back to the app...");
+        // Disable the markers menu
+        markersMenuCanvasGroup.alpha = 0;
+        markersMenuCanvasGroup.interactable = false;
+        markersMenuCanvasGroup.blocksRaycasts = false;
         EnableMainUI();
     }
 
